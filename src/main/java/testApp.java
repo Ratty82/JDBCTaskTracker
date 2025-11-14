@@ -1,6 +1,8 @@
+import db.DbManager;
 import exceptions.TaskNotFoundException;
 import model.Task;
 import service.JdbcTaskManager;
+import service.Managers;
 import util.TaskStatus;
 import util.TaskType;
 
@@ -9,7 +11,8 @@ import java.sql.SQLException;
 
 public class testApp {
     public static void main(String[] args) throws SQLException, IOException, TaskNotFoundException {
-        JdbcTaskManager db = new JdbcTaskManager();
+        DbManager dbman = Managers.getDefaultDatabase();
+        JdbcTaskManager db = new JdbcTaskManager(dbman);
 
         System.out.println(db.getAllTasks());
         System.out.println(db.findTaskByID(1, Task.class));

@@ -9,6 +9,8 @@ public class sqlPaths {
     public static final Path sqlSelectAll = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\selectAllTasks.sql");
     public static final Path truncateTasks = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\truncateTasks.sql");
     public static final Path deleteSql = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\deleteById.sql");
+    public static final Path deleteAllSubtasks = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\deleteAllSubtasks.sql");
+    public static final Path selectAllSubtasks = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\selectAllSubtasks.sql");
     public static final Path dbProperties = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\db.properties");
 
 }

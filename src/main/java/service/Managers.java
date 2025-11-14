@@ -1,18 +1,19 @@
 package service;
 
+import db.DbManager;
+
+import java.io.IOException;
 import java.nio.file.Path;
+import java.sql.SQLException;
 
 public class Managers {
-    /*public static HistoryManager getDefaultHistory() {
-        return new InMemoryHistoryManager();
+    public static DbManager getDefaultDatabase() {
+        return new DbManager();
     }
 
-    public static TaskManager getDefault(HistoryManager history) {
-        return new InMemoryTaskManager(history);
+    public static JdbcTaskManager getDefault(DbManager db) throws SQLException, IOException {
+        return new JdbcTaskManager(db);
     }
 
-    public static FileBackedTasksManager getDefautFileBacked(HistoryManager history, Path path) {
-        return new FileBackedTasksManager(history,path);
-    }*/
 
 }
