@@ -1,0 +1,1 @@
+UPDATE tasks SET name = ?, details = ?,status = ?, type = ?, epic_id = ? WHERE id = ? returning id

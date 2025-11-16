@@ -1,6 +1,7 @@
 package db;
 
 import java.nio.file.Path;
+import java.util.Properties;
 
 public class sqlPaths {
     public static final Path sqlInsert = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\insertTask.sql");
@@ -11,6 +12,6 @@ public class sqlPaths {
     public static final Path deleteSql = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\deleteById.sql");
     public static final Path deleteAllSubtasks = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\deleteAllSubtasks.sql");
     public static final Path selectAllSubtasks = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\selectAllSubtasks.sql");
-    public static final Path dbProperties = Path.of("D:\\JAVA_Projects\\java_course\\JDBCTaskTracker\\src\\main\\java\\db\\db.properties");
+    public static final String dbProperties = "db\\db.properties";
 
 }

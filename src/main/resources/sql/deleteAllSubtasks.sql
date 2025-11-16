@@ -1,0 +1,1 @@
+DELETE FROM tasks WHERE epic_id = ? retuning epic_id

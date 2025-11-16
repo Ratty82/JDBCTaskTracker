@@ -23,7 +23,6 @@ import java.util.List;
 
 public class TaskRequestHandler  {
     //static HistoryManager hm =Managers.getDefaultHistory();;
-    //static FileBackedTasksManager ftm = Managers.getDefautFileBacked(hm, Path.of("D:\\JAVA_Projects\\java_course\\SimpleJavaTaskTracker\\data.csv"));
 
     static DbManager dbman = Managers.getDefaultDatabase();
     static JdbcTaskManager ftm;

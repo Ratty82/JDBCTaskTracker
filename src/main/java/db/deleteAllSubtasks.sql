@@ -1,1 +1,0 @@
-DELETE FROM tasks WHERE epic_id = ?

@@ -1,1 +1,0 @@
-UPDATE tasks SET epic_id = ? , type = ? where id = ?

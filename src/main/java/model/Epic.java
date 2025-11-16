@@ -39,7 +39,7 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return super.toString() + "[Подзадачи: " + getAllSubtaskIds() +  "]";
+        return super.toString();
     }
 
     @Override
