@@ -27,12 +27,10 @@ public class testApp {
         System.out.println(db.findTaskByID(3, Epic.class));
 
         db.includeTaskToEpic(db.findTaskByID(1,Task.class),db.findTaskByID(3,Epic.class));
+        db.updateTask(new SubTask(1,"SubTask1","SubTaskUpdated",TaskStatus.IN_PROGRESS, TaskType.SUBTASK,3), SubTask.class);
         System.out.println(db.getAllSubTasks(db.findTaskByID(3,Epic.class)));
 
-
-        db.updateTask(new SubTask(2,"TaskUpdated","MyTaskUpdated",TaskStatus.NEW, TaskType.TASK,3), Task.class);
-        db.updateTask(new Epic(3,"EpicUpdated","MyEpicUpdated",TaskStatus.NEW, TaskType.EPIC,null), Epic.class);
-        db.updateTask(new SubTask(1,"TaskUpdated","MyFuckUpdated",TaskStatus.IN_PROGRESS, TaskType.SUBTASK,3), SubTask.class);
+        //db.updateTask(new Epic(3,"EpicUpdated","MyEpicUpdated",TaskStatus.NEW, TaskType.EPIC,null), Epic.class);
         System.out.println(db.getAllTasks());
 
 

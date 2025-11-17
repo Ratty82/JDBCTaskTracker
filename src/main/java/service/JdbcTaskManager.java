@@ -42,6 +42,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
     public List<Task> getAllTasks() {
         List<Task> taskList = null;
         try {
+            conn.setAutoCommit(false);
             ResultSet result = db.executeSql(conn, "sql\\selectAllTasks.sql", 0, null);
             taskList = new ArrayList<>();
             while (result.next()) {
@@ -52,8 +53,20 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                                                 TaskType.valueOf(result.getString("type")),
                                                 result.getInt("epic_id")));
             }
+            conn.commit();
         } catch (SQLException | IOException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Ошибка закрытия транзакции:" + ex.getMessage());
+            }
             System.out.println("Ошибка получения списка задач:" + e.getMessage());
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+            }
         }
         return taskList;
     }
@@ -61,9 +74,22 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
     @Override
     public void removeAllTasks() {
         try {
+            conn.setAutoCommit(false);
             db.executeSql(conn, "sql\\truncateTasks.sql", 0, null);
+            conn.commit();
         } catch (SQLException | IOException e) {
             System.out.println("Ошибка удаления всех задач:" + e.getMessage());
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Ошибка закрытия транзакции:" + ex.getMessage());
+            }
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+            }
         }
     }
 
@@ -74,6 +100,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
         }
         Task out = null;
         try {
+            conn.setAutoCommit(false);
             List<Object> params = List.of(taskId);
             ResultSet result = db.executeSql(conn, "sql\\selectTaskById.sql", params.size(), params);
             if (!result.next()) {
@@ -87,8 +114,21 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                     TaskType.valueOf(result.getString("type")),
                     result.getInt("epic_id")
             );
+            conn.commit();
         } catch (IOException | SQLException e) {
             System.out.println("Ошибка поиска задачи по Id:" + e.getMessage());
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Ошибка закрытия транзакции:" + ex.getMessage());
+            }
+        }
+        finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+            }
         }
         return type.cast(out);
     }
@@ -99,6 +139,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             throw new IllegalArgumentException(("Задача не должен быть null или подзадачей"));
         }
         try {
+            conn.setAutoCommit(false);
             List<Object> params = List.of(
                     task.getTaskId(),
                     task.getTaskName(),
@@ -108,8 +149,20 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                     0
             );
             db.executeSql(conn, "sql\\insertTask.sql", params.size(), params);
+            conn.commit();
         } catch (SQLException | IOException e) {
             System.out.println("Ошибка создания задачи:" + e.getMessage());
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Ошибка закрытия транзакции:" + ex.getMessage());
+            }
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+            }
         }
     }
 
@@ -123,45 +176,62 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             throw new TaskNotFoundException(newTask.getTaskId());
         }
 
-               List<Object> taskParams = new ArrayList<>(
+        List<Object> taskParams = new ArrayList<>(
                 List.of(
                         newTask.getTaskName(),
                         newTask.getTaskDetails(),
-                        newTask.getTaskStatus().toString(),
+                        (newTask instanceof Epic epic) ? setEpicStatus(epic).getTaskStatus().toString() : newTask.getTaskStatus().toString(),
                         newTask.getTaskType().toString(),
                         (newTask instanceof SubTask subTask) ? subTask.getTaskParentId() : 0,
                         newTask.getTaskId()
-        ));
+                ));
 
-                try {
+        try {
+            conn.setAutoCommit(false);
             db.executeSql(conn, "sql\\updateTask.sql", taskParams.size(), taskParams);
+            conn.commit();
         } catch (SQLException | IOException e) {
             System.out.println("Ошибка обновления задачи':" + e.getMessage());
-        }
-
-        Epic linkedEpic;
-        if (newTask instanceof SubTask subTask) {
-            linkedEpic = findTaskByID(subTask.getTaskParentId(),Epic.class);
-            System.out.println("Linked epic:" + linkedEpic.toString());
-        } else {
-            linkedEpic = null;
-        }
-
-        List<Object> epicParams = (linkedEpic != null) ? new ArrayList<>(
-                List.of(
-                        linkedEpic.getTaskName(),
-                        linkedEpic.getTaskDetails(),
-                        setEpicStatus(linkedEpic).getTaskStatus().toString(),
-                        linkedEpic.getTaskType().toString(),
-                        0,
-                        linkedEpic.getTaskId()
-                )) : null;
-
-        if (linkedEpic != null) {
             try {
-            db.executeSql(conn, "sql\\updateTask.sql", epicParams.size(), taskParams);
+                conn.rollback();
+            } catch (SQLException exe) {
+                System.out.println("Ошибка закрытия транзакции:" + exe.getMessage());
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+                }
+            }
+        }
+
+        if (newTask instanceof SubTask subTask) {
+            Epic linkedEpic = findTaskByID(subTask.getTaskParentId(), Epic.class);
+            List<Object> epicParams =  List.of(
+                    linkedEpic.getTaskName(),
+                    linkedEpic.getTaskDetails(),
+                    setEpicStatus(linkedEpic).getTaskStatus().toString(),
+                    linkedEpic.getTaskType().toString(),
+                    0,
+                    linkedEpic.getTaskId()
+            );
+            try {
+                conn.setAutoCommit(false);
+                db.executeSql(conn, "sql\\updateTask.sql", epicParams.size(), epicParams);
+                conn.commit();
             } catch (SQLException | IOException e) {
-            System.out.println("Ошибка обновления связанного эпика':" + e.getMessage());
+                System.out.println("Ошибка обновления связанного эпика':" + e.getMessage());
+                try {
+                    conn.rollback();
+                } catch (SQLException exe) {
+                    System.out.println("Ошибка закрытия транзакции:" + exe.getMessage());
+                }
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+                }
             }
         }
         return findTaskByID(newTask.getTaskId(), type);
@@ -173,6 +243,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             throw new IllegalArgumentException("ID не должен быть null или отрицательным");
         }
         try {
+           conn.setAutoCommit(false);
            List<Object> params = List.of(taskId);
            ResultSet result = db.executeSql(conn, "sql\\selectTaskById.sql", params.size(), params);
            if (!result.next()) {
@@ -186,8 +257,20 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                 db.executeSql(conn, "sql\\deleteById.sql", 1, params);
                 db.executeSql(conn, "sql\\deleteAllSubtasks.sql", 1, List.of(epicId));
            }
+           conn.commit();
         } catch (SQLException | IOException e) {
-                System.out.println("Deleting task Exception:" + e.getMessage());
+            System.out.println("Deleting task Exception:" + e.getMessage());
+            try {
+                conn.rollback();
+            } catch (SQLException exe) {
+                System.out.println("Ошибка закрытия транзакции:" + exe.getMessage());
+            }
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
+            }
         }
     }
 
@@ -198,6 +281,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             throw new IllegalArgumentException("ID не должен быть null или отрицательным");
         }
         try {
+            conn.setAutoCommit(false);
             List<Object> params = List.of(epic.getTaskId());
             ResultSet result = db.executeSql(conn, "sql\\selectAllSubtasks.sql", params.size(), params);
             if (!result.next()) {
@@ -214,18 +298,27 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                 );
             }
             while (result.next());
-
-
+            conn.commit();
             } catch (SQLException | IOException | TaskNotFoundException e) {
-                System.out.println("Selecting subtasks Exception:" + e.getMessage());
+                System.out.println("Ошибка поиска подзадач в эпике:" + e.getMessage());
+                try {
+                    conn.rollback();
+                } catch (SQLException exe) {
+                    System.out.println("Ошибка закрытия транзакции:" + exe.getMessage());
+                }
+            } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Ошибка изменения режима соединения к базе данных:" + ex.getMessage());
             }
+        }
         return subTaskList;
         }
 
 
     @Override
     public Epic setEpicStatus(Epic epic) {
-        System.out.println("Subtasks" + getAllSubTasks(epic).toString());
         if ( getAllSubTasks(epic).isEmpty()  || getAllSubTasks(epic).stream().allMatch(t -> t.getTaskStatus() == TaskStatus.NEW)) {
             return new Epic(epic.getTaskId(), epic.getTaskName(), epic.getTaskDetails(), TaskStatus.NEW, TaskType.EPIC, epic.getAllSubtaskIds());
         } else if (getAllSubTasks(epic).stream().allMatch(t -> t.getTaskStatus() == TaskStatus.DONE)) {
@@ -264,7 +357,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             }
             taskType =  TaskType.valueOf(result.getString("type"));
         } catch (SQLException | IOException | TaskNotFoundException e) {
-                System.out.println("Selecting subtasks Exception:" + e.getMessage());
+                System.out.println("Ошибка определения типа задачи:" + e.getMessage());
         }
         return taskType;
     }
