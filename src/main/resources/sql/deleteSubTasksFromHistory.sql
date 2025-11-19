@@ -1,0 +1,1 @@
+delete from history where task_id in (select id from tasks where epic_id = ?)

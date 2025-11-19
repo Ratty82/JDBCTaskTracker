@@ -28,7 +28,7 @@ public class HttpTaskServerFileBackedRefactor {
 
         });
 
-        /*commonServer.createContext("/history",exchange -> {
+        commonServer.createContext("/history",exchange -> {
             try {
                 switch (exchange.getRequestMethod()) {
                     case "GET" ->{HistoryRequestHandler.getHistoryHandler(exchange);}
@@ -38,7 +38,7 @@ public class HttpTaskServerFileBackedRefactor {
                 String body = "History API Error:" + e.getMessage();
                 Responses.sendError(exchange,500,body);
             }
-        });*/
+        });
 
         commonServer.start();
 

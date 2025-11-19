@@ -3,6 +3,7 @@ import exceptions.TaskNotFoundException;
 import model.Epic;
 import model.SubTask;
 import model.Task;
+import service.JdbcHistoryManager;
 import service.JdbcTaskManager;
 import service.Managers;
 import util.TaskStatus;
@@ -14,7 +15,8 @@ import java.sql.SQLException;
 public class testApp {
     public static void main(String[] args) throws SQLException, IOException, TaskNotFoundException {
         DbManager dbman = Managers.getDefaultDatabase();
-        JdbcTaskManager db =  Managers.getDefault(dbman);
+        JdbcHistoryManager hm = new JdbcHistoryManager(dbman);
+        JdbcTaskManager db =  Managers.getDefault(dbman,hm);
 
         db.removeAllTasks();
 
@@ -30,8 +32,8 @@ public class testApp {
         db.updateTask(new SubTask(1,"SubTask1","SubTaskUpdated",TaskStatus.IN_PROGRESS, TaskType.SUBTASK,3), SubTask.class);
         System.out.println(db.getAllSubTasks(db.findTaskByID(3,Epic.class)));
 
-        //db.updateTask(new Epic(3,"EpicUpdated","MyEpicUpdated",TaskStatus.NEW, TaskType.EPIC,null), Epic.class);
         System.out.println(db.getAllTasks());
+        System.out.println(db.getTaskType(1));
 
 
 

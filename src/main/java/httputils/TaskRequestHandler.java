@@ -8,6 +8,8 @@ import model.Epic;
 import model.SubTask;
 import model.Task;
 
+import service.HistoryManager;
+import service.JdbcHistoryManager;
 import service.JdbcTaskManager;
 import service.Managers;
 import util.DtoVars;
@@ -22,14 +24,14 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TaskRequestHandler  {
-    //static HistoryManager hm =Managers.getDefaultHistory();;
-
     static DbManager dbman = Managers.getDefaultDatabase();
+    static JdbcHistoryManager hm;
     static JdbcTaskManager ftm;
 
     static {
         try {
-            ftm = Managers.getDefault(dbman);
+            hm =  Managers.getDefaultHistory(dbman);
+            ftm = Managers.getDefault(dbman,hm);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -37,7 +39,7 @@ public class TaskRequestHandler  {
         }
     }
 
-    public static void getTaskHandler(HttpExchange he) throws IOException, TaskNotFoundException {
+    public static void getTaskHandler(HttpExchange he) throws IOException {
         //отсылаю запросы http://localhost:8080/tasks?id=1 - получить задачу по Id; http://localhost:8080/tasks - получить все задачи
         String query = he.getRequestURI().getQuery();
         if ( query == null ) {
@@ -59,7 +61,7 @@ public class TaskRequestHandler  {
                 } else if (taskType == TaskType.SUBTASK) {
                     Responses.sendJson(he, 200, ftm.findTaskByID(taskId, SubTask.class));
                 }
-            } catch (Exception e) {
+            } catch (IOException|TaskNotFoundException e) {
                 Responses.sendError(he, 404, "Task not found" );
             }
         }
@@ -81,7 +83,7 @@ public class TaskRequestHandler  {
             }
             case EPIC -> {
                 try {
-                    ftm.createTask(new Epic(newId, dto.getTaskName(), dto.getTaskDetails(), dto.getTaskStatus(), TaskType.TASK));
+                    ftm.createTask(new Epic(newId, dto.getTaskName(), dto.getTaskDetails(), dto.getTaskStatus(), TaskType.EPIC));
                     Responses.sendJson(he, 201, ftm.findTaskByID(newId, Epic.class));
                 } catch (Exception e) {
                     Responses.sendError(he, 404, "Problem creating epic :" + e.getMessage());

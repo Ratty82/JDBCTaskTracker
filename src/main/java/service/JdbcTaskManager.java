@@ -19,12 +19,14 @@ import java.util.Properties;
 
 public class JdbcTaskManager implements TaskManager, AutoCloseable {
     protected DbManager db;
+    protected JdbcHistoryManager hm;
     protected Properties prop;
     protected Connection conn;
 
 
-    public JdbcTaskManager(DbManager db) throws SQLException {
+    public JdbcTaskManager(DbManager db,JdbcHistoryManager hm) throws SQLException {
         this.db = db;
+        this.hm = hm;
         this.prop = db.getPropertiesFromFile("db\\db.properties");
         this.conn = db.getConnection(prop);
     }
@@ -114,6 +116,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                     TaskType.valueOf(result.getString("type")),
                     result.getInt("epic_id")
             );
+            hm.addTaskToHistory(taskId);
             conn.commit();
         } catch (IOException | SQLException e) {
             System.out.println("Ошибка поиска задачи по Id:" + e.getMessage());
@@ -149,6 +152,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                     0
             );
             db.executeSql(conn, "sql\\insertTask.sql", params.size(), params);
+            hm.addTaskToHistory(task.getTaskId());
             conn.commit();
         } catch (SQLException | IOException e) {
             System.out.println("Ошибка создания задачи:" + e.getMessage());
@@ -189,6 +193,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
         try {
             conn.setAutoCommit(false);
             db.executeSql(conn, "sql\\updateTask.sql", taskParams.size(), taskParams);
+            hm.addTaskToHistory(newTask.getTaskId());
             conn.commit();
         } catch (SQLException | IOException e) {
             System.out.println("Ошибка обновления задачи':" + e.getMessage());
@@ -218,6 +223,7 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
             try {
                 conn.setAutoCommit(false);
                 db.executeSql(conn, "sql\\updateTask.sql", epicParams.size(), epicParams);
+                hm.addTaskToHistory(subTask.getTaskId());
                 conn.commit();
             } catch (SQLException | IOException e) {
                 System.out.println("Ошибка обновления связанного эпика':" + e.getMessage());
@@ -253,8 +259,11 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
            Integer epicId = result.getInt("epic_id");
            if (ttype == TaskType.TASK || ttype == TaskType.SUBTASK) {
                 db.executeSql(conn, "sql\\deleteById.sql", 1, params);
+                hm.deleteFromHistoryById(taskId);
            } else {
                 db.executeSql(conn, "sql\\deleteById.sql", 1, params);
+                hm.deleteFromHistoryById(taskId);
+                hm.deleteAllSubtasksFromHistory(epicId);
                 db.executeSql(conn, "sql\\deleteAllSubtasks.sql", 1, List.of(epicId));
            }
            conn.commit();
@@ -356,7 +365,8 @@ public class JdbcTaskManager implements TaskManager, AutoCloseable {
                 throw new TaskNotFoundException(taskId);
             }
             taskType =  TaskType.valueOf(result.getString("type"));
-        } catch (SQLException | IOException | TaskNotFoundException e) {
+
+        } catch (SQLException | IOException e) {
                 System.out.println("Ошибка определения типа задачи:" + e.getMessage());
         }
         return taskType;

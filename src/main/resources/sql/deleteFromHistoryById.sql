@@ -1,0 +1,1 @@
+delete from history where task_id = ?
